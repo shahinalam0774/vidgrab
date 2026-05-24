@@ -108,21 +108,15 @@ nav {
   border-radius:14px; padding:12px 16px; margin-bottom:16px;
   animation: fadeUp .5s ease both;
 }
-.cookie-banner.active {
-  background:rgba(61,220,151,.06); border-color:rgba(61,220,151,.3);
-}
+.cookie-banner.active { background:rgba(61,220,151,.06); border-color:rgba(61,220,151,.3); }
 .cookie-banner-left { display:flex; align-items:center; gap:10px; }
 .cookie-icon { font-size:1.25rem; }
 .cookie-title { font-size:.82rem; font-weight:600; color:var(--text); margin-bottom:2px; }
 .cookie-sub  { font-size:.72rem; color:var(--muted); }
 .cookie-actions { display:flex; gap:8px; align-items:center; flex-shrink:0; }
-.btn-cookie {
-  border:none; border-radius:9px; padding:7px 14px;
-  font-size:.76rem; font-weight:600; cursor:pointer;
-  transition:all .2s; font-family:'Syne',sans-serif; white-space:nowrap;
-}
-.btn-cookie-upload { background:rgba(255,185,48,.15); color:var(--warning);
-  border:1px solid rgba(255,185,48,.3); }
+.btn-cookie { border:none; border-radius:9px; padding:7px 14px; font-size:.76rem;
+  font-weight:600; cursor:pointer; transition:all .2s; font-family:'Syne',sans-serif; white-space:nowrap; }
+.btn-cookie-upload { background:rgba(255,185,48,.15); color:var(--warning); border:1px solid rgba(255,185,48,.3); }
 .btn-cookie-upload:hover { background:rgba(255,185,48,.28); }
 .btn-cookie-remove { background:rgba(255,79,114,.1); color:var(--error);
   border:1px solid rgba(255,79,114,.25); font-size:.72rem; padding:5px 10px; }
@@ -205,25 +199,45 @@ nav {
 
 /* ── OPTIONS GRID ── */
 .options-grid {
-  display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:20px;
+  display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:20px;
 }
 
+@media(max-width:600px){
+  .options-grid { grid-template-columns:1fr; }
+}
+
+.opt-group { display:flex; flex-direction:column; }
+
 .opt-group label {
-  display:block; font-size:.72rem; color:var(--muted);
+  display:flex; align-items:center; gap:6px;
+  font-size:.7rem; color:var(--muted);
   text-transform:uppercase; letter-spacing:.9px;
-  font-weight:600; margin-bottom:7px;
+  font-weight:700; margin-bottom:6px;
+}
+.opt-group label .lbl-icon {
+  font-size:.95rem; line-height:1;
+}
+
+.sel-wrap {
+  position:relative; flex:1;
+}
+.sel-wrap::after {
+  content:'';
+  position:absolute; right:12px; top:50%; transform:translateY(-50%);
+  width:10px; height:6px; pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23606080' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center;
 }
 
 select {
   width:100%; background:var(--surface); border:1.5px solid var(--border2);
-  border-radius:10px; padding:10px 32px 10px 12px; color:var(--text);
-  font-size:.84rem; outline:none; cursor:pointer; transition:border-color .2s;
-  appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%23606080' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat; background-position:right 11px center;
+  border-radius:11px; padding:11px 34px 11px 13px; color:var(--text);
+  font-size:.83rem; outline:none; cursor:pointer; transition:all .2s;
+  appearance:none; -webkit-appearance:none; font-family:'Inter',sans-serif;
 }
-select:focus { border-color:var(--accent); }
-select option { background:var(--card2); }
+select:hover { border-color:rgba(108,99,255,.4); background:rgba(108,99,255,.04); }
+select:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(108,99,255,.12); background:var(--surface); }
+select option { background:#13141e; color:var(--text); padding:8px; }
+select optgroup { color:var(--muted); font-size:.75rem; font-weight:700; text-transform:uppercase; }
 
 /* ── PLAYLIST OPTIONS ── */
 .playlist-opts {
@@ -602,43 +616,63 @@ footer a:hover { text-decoration:underline; }
     <!-- OPTIONS -->
     <div class="options-grid">
       <div class="opt-group">
-        <label>Format</label>
-        <select id="fmtSel">
-          <option value="mp4">MP4 (Video)</option>
-          <option value="webm">WebM</option>
-          <option value="mkv">MKV</option>
-          <option value="mp3">MP3 (Audio)</option>
-          <option value="m4a">M4A (Audio)</option>
-          <option value="wav">WAV (Audio)</option>
-          <option value="flac">FLAC (Audio)</option>
-        </select>
+        <label><span class="lbl-icon">🎞</span> Format</label>
+        <div class="sel-wrap">
+          <select id="fmtSel">
+            <optgroup label="── Video ──">
+              <option value="mp4">📹 MP4 (Recommended)</option>
+              <option value="webm">🌐 WebM</option>
+              <option value="mkv">📦 MKV</option>
+            </optgroup>
+            <optgroup label="── Audio ──">
+              <option value="mp3">🎵 MP3</option>
+              <option value="m4a">🎵 M4A</option>
+              <option value="wav">🎵 WAV (Lossless)</option>
+              <option value="flac">🎵 FLAC (Lossless)</option>
+            </optgroup>
+          </select>
+        </div>
       </div>
       <div class="opt-group">
-        <label>Resolution</label>
-        <select id="qualSel">
-          <option value="best">Best Available</option>
-          <option value="8K">8K (4320p)</option>
-          <option value="4K">4K (2160p)</option>
-          <option value="2K">2K (1440p)</option>
-          <option value="1080">1080p Full HD</option>
-          <option value="720" selected>720p HD</option>
-          <option value="480">480p</option>
-          <option value="360">360p</option>
-          <option value="240">320×240</option>
-          <option value="144">160×128</option>
-          <option value="audio">Audio Only</option>
-        </select>
+        <label><span class="lbl-icon">📺</span> Resolution</label>
+        <div class="sel-wrap">
+          <select id="qualSel">
+            <option value="best">⭐ Best Available</option>
+            <optgroup label="── Ultra HD ──">
+              <option value="8K">8K — 4320p</option>
+              <option value="4K">4K — 2160p</option>
+              <option value="2K">2K — 1440p</option>
+            </optgroup>
+            <optgroup label="── HD ──">
+              <option value="1080">1080p Full HD</option>
+              <option value="720" selected>720p HD</option>
+            </optgroup>
+            <optgroup label="── SD ──">
+              <option value="480">480p</option>
+              <option value="360">360p</option>
+              <option value="240">240p</option>
+              <option value="144">144p</option>
+            </optgroup>
+            <optgroup label="── Audio ──">
+              <option value="audio">🎵 Audio Only</option>
+            </optgroup>
+          </select>
+        </div>
       </div>
       <div class="opt-group">
-        <label>Subtitles</label>
-        <select id="subSel">
-          <option value="none">None</option>
-          <option value="en">English</option>
-          <option value="bn">Bengali</option>
-          <option value="ar">Arabic</option>
-          <option value="hi">Hindi</option>
-          <option value="all">All Languages</option>
-        </select>
+        <label><span class="lbl-icon">💬</span> Subtitles</label>
+        <div class="sel-wrap">
+          <select id="subSel">
+            <option value="none">None</option>
+            <optgroup label="── Languages ──">
+              <option value="en">🇺🇸 English</option>
+              <option value="bn">🇧🇩 Bengali</option>
+              <option value="ar">🇸🇦 Arabic</option>
+              <option value="hi">🇮🇳 Hindi</option>
+            </optgroup>
+            <option value="all">🌐 All Languages</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -1108,7 +1142,6 @@ async function checkCookieStatus() {
     setCookieUI(d.active);
   } catch {}
 }
-
 function setCookieUI(active) {
   const banner = document.getElementById('cookieBanner');
   const title  = document.getElementById('cookieTitle');
@@ -1126,42 +1159,26 @@ function setCookieUI(active) {
     removeBtn.style.display = 'none';
   }
 }
-
 document.getElementById('cookieFileInput').addEventListener('change', async function() {
   const file = this.files[0];
   if (!file) return;
   const btn = document.querySelector('.btn-cookie-upload');
-  btn.textContent = '⏳ Uploading...';
-  btn.disabled = true;
+  btn.textContent = '⏳ Uploading...'; btn.disabled = true;
   try {
-    const fd = new FormData();
-    fd.append('file', file);
+    const fd = new FormData(); fd.append('file', file);
     const r = await fetch(`${BACKEND_URL}/upload-cookies`, { method: 'POST', body: fd });
     const d = await r.json();
-    if (d.success) {
-      log('✓ cookies.txt uploaded — YouTube bot-detection bypassed!', 'ok');
-      setCookieUI(true);
-    } else {
-      log('✗ Cookie upload failed: ' + (d.error || 'Unknown'), 'err');
-    }
-  } catch(e) {
-    log('✗ Upload error: ' + e.message, 'err');
-  }
-  btn.textContent = '⬆ Upload cookies.txt';
-  btn.disabled = false;
-  this.value = '';
+    if (d.success) { log('✓ cookies.txt uploaded!', 'ok'); setCookieUI(true); }
+    else log('✗ Upload failed: ' + (d.error || 'Unknown'), 'err');
+  } catch(e) { log('✗ Upload error: ' + e.message, 'err'); }
+  btn.textContent = '⬆ Upload cookies.txt'; btn.disabled = false; this.value = '';
 });
-
 async function removeCookies() {
   try {
     await fetch(`${BACKEND_URL}/delete-cookies`, { method: 'DELETE' });
-    setCookieUI(false);
-    log('🗑 cookies.txt removed.', 'warn');
-  } catch(e) {
-    log('✗ Remove failed: ' + e.message, 'err');
-  }
+    setCookieUI(false); log('🗑 cookies.txt removed.', 'warn');
+  } catch(e) { log('✗ ' + e.message, 'err'); }
 }
-
 checkCookieStatus();
 
 </script>
