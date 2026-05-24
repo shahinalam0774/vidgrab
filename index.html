@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VidGrab — ভিডিও ডাউনলোডার</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Noto+Sans+Bengali:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #16161f;
+    --border: #2a2a3a;
+    --accent: #7c6aff;
+    --accent2: #ff6a9a;
+    --accent3: #6affda;
+    --text: #f0f0f8;
+    --muted: #888899;
+    --success: #4ade80;
+    --error: #ff4d6d;
+    --warning: #fbbf24;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans Bengali', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated mesh background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(124,106,255,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(255,106,154,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 50% 50%, rgba(106,255,218,0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .grain {
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+  }
+
+  /* Header */
+  header {
+    padding: 48px 0 32px;
+    text-align: center;
+    animation: fadeDown 0.7s ease both;
+  }
+
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .logo-icon {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 0 30px rgba(124,106,255,0.4);
+  }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -1px;
+  }
+
+  .tagline {
+    font-family: 'Syne', sans-serif;
+    color: var(--muted);
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+  }
+
+  /* Main card */
+  .main-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 32px;
+    margin-bottom: 20px;
+    animation: fadeUp 0.7s 0.1s ease both;
+    box-shadow: 0 0 0 1px rgba(124,106,255,0.05), 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  /* URL Input */
+  .url-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .url-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--text);
+    outline: none;
+    transition: all 0.25s;
+  }
+
+  .url-input::placeholder { color: var(--muted); font-family: 'Noto Sans Bengali', sans-serif; font-size: 0.9rem; }
+  .url-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,106,255,0.15); }
+
+  .btn-main {
+    background: linear-gradient(135deg, var(--accent), #9b5de5);
+    border: none;
+    border-radius: 14px;
+    padding: 14px 28px;
+    color: white;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s;
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(124,106,255,0.35);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-main:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(124,106,255,0.5); }
+  .btn-main:active { transform: translateY(0); }
+  .btn-main:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Format options */
+  .options-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .option-group label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-family: 'Syne', sans-serif;
+  }
+
+  select {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 0.85rem;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+  select:focus { border-color: var(--accent); }
+
+  /* Quick preset buttons */
+  .presets {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+
+  .preset-btn {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+  }
+
+  .preset-btn:hover, .preset-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(124,106,255,0.08);
+  }
+
+  /* Advanced toggle */
+  .advanced-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 0.82rem;
+    margin-bottom: 12px;
+    user-select: none;
+    width: fit-content;
+    transition: color 0.2s;
+  }
+  .advanced-toggle:hover { color: var(--text); }
+  .toggle-arrow { transition: transform 0.2s; font-size: 10px; }
+  .advanced-toggle.open .toggle-arrow { transform: rotate(90deg); }
+
+  .advanced-panel {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+  .advanced-panel.show { display: block; }
+
+  .advanced-panel textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    resize: vertical;
+    min-height: 60px;
+    outline: none;
+    line-height: 1.6;
+  }
+  .advanced-panel textarea::placeholder { color: var(--muted); }
+
+  /* Console output */
+  .console-card {
+    background: #0d0d14;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    animation: fadeUp 0.7s 0.2s ease both;
+  }
+
+  .console-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .console-dots { display: flex; gap: 6px; }
+  .dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+  }
+  .dot.r { background: #ff5f57; }
+  .dot.y { background: #febc2e; }
+  .dot.g { background: #28c840; }
+
+  .console-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.78rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .clear-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 10px;
+    color: var(--muted);
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Syne', sans-serif;
+  }
+  .clear-btn:hover { color: var(--text); border-color: var(--text); }
+
+  .console-body {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    padding: 16px;
+    min-height: 180px;
+    max-height: 380px;
+    overflow-y: auto;
+    line-height: 1.7;
+    color: #a8a8c0;
+  }
+
+  .console-body::-webkit-scrollbar { width: 5px; }
+  .console-body::-webkit-scrollbar-track { background: transparent; }
+  .console-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+  .log-line { display: block; margin-bottom: 2px; }
+  .log-line.info { color: #7c9fff; }
+  .log-line.success { color: var(--success); }
+  .log-line.error { color: var(--error); }
+  .log-line.warning { color: var(--warning); }
+  .log-line.dim { color: var(--muted); }
+  .log-line.download { color: var(--accent3); }
+  .log-line.merger { color: var(--accent2); }
+
+  .prompt { color: var(--accent); margin-right: 8px; }
+
+  /* Progress bar */
+  .progress-wrap {
+    padding: 0 16px 14px;
+    display: none;
+  }
+  .progress-wrap.show { display: block; }
+  .progress-bar-bg {
+    background: var(--surface);
+    border-radius: 100px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    border-radius: 100px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+  .progress-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* Download result */
+  .download-result {
+    margin-top: 16px;
+    background: rgba(74,222,128,0.07);
+    border: 1px solid rgba(74,222,128,0.25);
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: none;
+    align-items: center;
+    gap: 16px;
+    animation: fadeUp 0.4s ease both;
+  }
+  .download-result.show { display: flex; }
+
+  .dl-icon { font-size: 26px; }
+
+  .dl-info { flex: 1; }
+  .dl-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 3px;
+    color: var(--text);
+    word-break: break-all;
+  }
+  .dl-meta { font-size: 0.78rem; color: var(--muted); }
+
+  .dl-btn {
+    background: var(--success);
+    border: none;
+    border-radius: 10px;
+    padding: 10px 22px;
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .dl-btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
+
+  /* Features strip */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+    animation: fadeUp 0.7s 0.3s ease both;
+  }
+
+  .feature-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .feature-emoji { font-size: 22px; margin-bottom: 6px; }
+  .feature-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .feature-desc { font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
+
+  /* Supported sites */
+  .sites-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 20px;
+    animation: fadeUp 0.7s 0.4s ease both;
+  }
+
+  .site-badge {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 40px 0 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+    animation: fadeUp 0.7s 0.5s ease both;
+  }
+
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* Loading spinner inline */
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .options-row { grid-template-columns: 1fr 1fr; }
+    .features { grid-template-columns: 1fr 1fr; }
+    .url-row { flex-direction: column; }
+    .btn-main { width: 100%; justify-content: center; }
+    .main-card { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<div class="wrapper">
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⬇️</div>
+      <span class="logo-text">VidGrab</span>
+    </div>
+    <p class="tagline">যেকোনো ওয়েবসাইট থেকে ভিডিও ও অডিও ডাউনলোড করুন</p>
+  </header>
+
+  <!-- Main download card -->
+  <div class="main-card">
+    <!-- Presets -->
+    <div class="presets" style="margin-bottom:14px;">
+      <span style="font-size:0.78rem;color:var(--muted);align-self:center;font-family:'Syne',sans-serif;">প্রিসেট:</span>
+      <button class="preset-btn active" data-preset="video_hd">🎬 ভিডিও HD</button>
+      <button class="preset-btn" data-preset="video_4k">✨ ভিডিও 4K</button>
+      <button class="preset-btn" data-preset="audio_only">🎵 শুধু অডিও</button>
+      <button class="preset-btn" data-preset="audio_mp3">🎧 MP3</button>
+      <button class="preset-btn" data-preset="playlist">📋 প্লেলিস্ট</button>
+    </div>
+
+    <!-- URL Input row -->
+    <div class="url-row">
+      <input
+        type="text"
+        class="url-input"
+        id="urlInput"
+        placeholder="ভিডিও লিংক পেস্ট করুন (YouTube, Facebook, TikTok...)"
+        autocomplete="off"
+      />
+      <button class="btn-main" id="downloadBtn" onclick="startDownload()">
+        <span id="btnIcon">⬇</span>
+        <span id="btnText">ডাউনলোড</span>
+      </button>
+    </div>
+
+    <!-- Format options -->
+    <div class="options-row">
+      <div class="option-group">
+        <label>ফরম্যাট</label>
+        <select id="formatSelect">
+          <option value="mp4">MP4 (ভিডিও)</option>
+          <option value="webm">WebM</option>
+          <option value="mkv">MKV</option>
+          <option value="mp3">MP3 (অডিও)</option>
+          <option value="m4a">M4A (অডিও)</option>
+          <option value="wav">WAV (অডিও)</option>
+        </select>
+      </div>
+      <div class="option-group">
+        <label>কোয়ালিটি</label>
+        <select id="qualitySelect">
+          <option value="best">সেরা</option>
+          <option value="1080">1080p</option>
+          <option value="720" selected>720p</option>
+          <option value="480">480p</option>
+          <option value="360">360p</option>
+          <option value="audio">শুধু অডিও</option>
+        </select>
+      </div>
+      <div class="option-group">
+        <label>সাবটাইটেল</label>
+        <select id="subtitleSelect">
+          <option value="none">নেই</option>
+          <option value="bn">বাংলা</option>
+          <option value="en">ইংরেজি</option>
+          <option value="all">সব ভাষা</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Advanced options toggle -->
+    <div class="advanced-toggle" id="advToggle" onclick="toggleAdvanced()">
+      <span class="toggle-arrow">▶</span>
+      <span>অতিরিক্ত অপশন (yt-dlp কমান্ড)</span>
+    </div>
+    <div class="advanced-panel" id="advPanel">
+      <textarea id="extraArgs" placeholder="--cookies-from-browser chrome --playlist-items 1-10 --write-thumbnail ..."></textarea>
+    </div>
+
+    <!-- Download result -->
+    <div class="download-result" id="downloadResult">
+      <div class="dl-icon">🎉</div>
+      <div class="dl-info">
+        <div class="dl-name" id="dlFileName">ফাইলের নাম</div>
+        <div class="dl-meta" id="dlFileMeta">সাইজ এবং ফরম্যাট</div>
+      </div>
+      <a class="dl-btn" id="dlLink" href="#" download>⬇ ডাউনলোড</a>
+    </div>
+  </div>
+
+  <!-- Console -->
+  <div class="console-card">
+    <div class="console-header">
+      <div class="console-dots">
+        <div class="dot r"></div>
+        <div class="dot y"></div>
+        <div class="dot g"></div>
+      </div>
+      <div class="console-title">আউটপুট কনসোল</div>
+      <button class="clear-btn" onclick="clearConsole()">পরিষ্কার</button>
+    </div>
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-label">
+        <span id="progressText">ডাউনলোড হচ্ছে...</span>
+        <span id="progressPct">0%</span>
+      </div>
+    </div>
+    <div class="console-body" id="consoleOutput">
+      <span class="log-line dim">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+      <span class="log-line info">  VidGrab v1.0 — yt-dlp ওয়েব ইন্টারফেস</span>
+      <span class="log-line dim">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+      <span class="log-line"></span>
+      <span class="log-line dim">লিংক পেস্ট করুন এবং ডাউনলোড বাটনে ক্লিক করুন।</span>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <div class="features">
+    <div class="feature-card">
+      <div class="feature-emoji">⚡</div>
+      <div class="feature-title">দ্রুত ডাউনলোড</div>
+      <div class="feature-desc">হাই-স্পিড সার্ভার থেকে সরাসরি ডাউনলোড</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-emoji">🎯</div>
+      <div class="feature-title">১০০০+ সাইট</div>
+      <div class="feature-desc">YouTube, TikTok, Facebook সহ হাজারো সাইট সাপোর্ট</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-emoji">🔒</div>
+      <div class="feature-title">নিরাপদ</div>
+      <div class="feature-desc">কোনো ট্র্যাকিং নেই, ফাইল ১ ঘন্টায় মুছে যায়</div>
+    </div>
+  </div>
+
+  <!-- Supported sites -->
+  <div class="sites-row">
+    <span class="site-badge">▶ YouTube</span>
+    <span class="site-badge">🎵 TikTok</span>
+    <span class="site-badge">📘 Facebook</span>
+    <span class="site-badge">📸 Instagram</span>
+    <span class="site-badge">🐦 Twitter/X</span>
+    <span class="site-badge">🎬 Vimeo</span>
+    <span class="site-badge">🎭 Dailymotion</span>
+    <span class="site-badge">+ আরো হাজারো সাইট</span>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>Powered by <a href="https://github.com/yt-dlp/yt-dlp" target="_blank">yt-dlp</a> &nbsp;•&nbsp;
+    <a href="https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md" target="_blank">সাপোর্টেড সাইটের তালিকা</a></p>
+    <p style="margin-top:8px;">⚠️ শুধুমাত্র ব্যক্তিগত ব্যবহারের জন্য। কপিরাইট আইন মেনে চলুন।</p>
+  </footer>
+</div>
+
+<script>
+// ======================================================
+// CONFIG — আপনার backend URL এখানে বসান
+// ======================================================
+const BACKEND_URL = 'https://vidgrab-backend-12qw.onrender.com'; // production: 'https://your-backend.onrender.com'
+
+// ======================================================
+// Preset configurations
+// ======================================================
+const PRESETS = {
+  video_hd: { format: 'mp4', quality: '720', subtitle: 'none' },
+  video_4k:  { format: 'mp4', quality: 'best', subtitle: 'none' },
+  audio_only:{ format: 'm4a', quality: 'audio', subtitle: 'none' },
+  audio_mp3: { format: 'mp3', quality: 'audio', subtitle: 'none' },
+  playlist:  { format: 'mp4', quality: '720', subtitle: 'none' },
+};
+
+// Preset button logic
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const preset = PRESETS[btn.dataset.preset];
+    if (preset) {
+      document.getElementById('formatSelect').value = preset.format;
+      document.getElementById('qualitySelect').value = preset.quality;
+      document.getElementById('subtitleSelect').value = preset.subtitle;
+    }
+  });
+});
+
+// Advanced toggle
+function toggleAdvanced() {
+  const toggle = document.getElementById('advToggle');
+  const panel = document.getElementById('advPanel');
+  toggle.classList.toggle('open');
+  panel.classList.toggle('show');
+}
+
+// Console helpers
+function log(msg, type = '') {
+  const out = document.getElementById('consoleOutput');
+  const line = document.createElement('span');
+  line.className = `log-line ${type}`;
+  line.textContent = msg;
+  out.appendChild(line);
+  out.scrollTop = out.scrollHeight;
+}
+
+function clearConsole() {
+  document.getElementById('consoleOutput').innerHTML =
+    '<span class="log-line dim">কনসোল পরিষ্কার করা হয়েছে।</span>';
+  document.getElementById('downloadResult').classList.remove('show');
+  document.getElementById('progressWrap').classList.remove('show');
+}
+
+// Progress bar
+function setProgress(pct, label = '') {
+  const wrap = document.getElementById('progressWrap');
+  const fill = document.getElementById('progressFill');
+  const text = document.getElementById('progressText');
+  const pctEl = document.getElementById('progressPct');
+  wrap.classList.add('show');
+  fill.style.width = pct + '%';
+  pctEl.textContent = pct + '%';
+  if (label) text.textContent = label;
+}
+
+// Build yt-dlp command from UI
+function buildCommand(url) {
+  const format = document.getElementById('formatSelect').value;
+  const quality = document.getElementById('qualitySelect').value;
+  const subtitle = document.getElementById('subtitleSelect').value;
+  const extra = document.getElementById('extraArgs').value.trim();
+
+  let formatFlag = '';
+  if (format === 'mp3') {
+    formatFlag = '-x --audio-format mp3 --audio-quality 0';
+  } else if (['m4a', 'wav'].includes(format)) {
+    formatFlag = `-x --audio-format ${format}`;
+  } else if (quality === 'audio') {
+    formatFlag = '-x --audio-format m4a';
+  } else if (quality === 'best') {
+    formatFlag = `-f "bestvideo[ext=${format}]+bestaudio/best" --merge-output-format ${format}`;
+  } else {
+    formatFlag = `-f "bestvideo[height<=${quality}][ext=mp4]+bestaudio[ext=m4a]/best[height<=${quality}]" --merge-output-format ${format}`;
+  }
+
+  let subFlag = '';
+  if (subtitle === 'all') subFlag = '--write-subs --write-auto-subs';
+  else if (subtitle !== 'none') subFlag = `--write-subs --sub-langs ${subtitle}`;
+
+  return `${url} ${formatFlag} ${subFlag} ${extra}`.trim();
+}
+
+// Main download function
+async function startDownload() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) {
+    log('⚠ একটি URL প্রবেশ করান!', 'warning');
+    return;
+  }
+  if (!url.startsWith('http')) {
+    log('⚠ সঠিক URL প্রবেশ করান (http:// বা https:// দিয়ে শুরু)', 'warning');
+    return;
+  }
+
+  const btn = document.getElementById('downloadBtn');
+  const btnIcon = document.getElementById('btnIcon');
+  const btnText = document.getElementById('btnText');
+
+  btn.disabled = true;
+  btnIcon.innerHTML = '<div class="spinner"></div>';
+  btnText.textContent = 'চলছে...';
+  document.getElementById('downloadResult').classList.remove('show');
+
+  const command = buildCommand(url);
+  log('');
+  log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'dim');
+  log('$ yt-dlp ' + command, 'info');
+  log('');
+  setProgress(5, 'শুরু হচ্ছে...');
+
+  try {
+    // SSE streaming from backend
+    const response = await fetch(`${BACKEND_URL}/download`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command })
+    });
+
+    if (!response.ok) throw new Error(`সার্ভার এরর: ${response.status}`);
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let filename = '';
+    let filesize = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const raw of lines) {
+        if (!raw.trim()) continue;
+        let data;
+        try { data = JSON.parse(raw); } catch { continue; }
+
+        // Render log line
+        const { type, text } = data;
+        if (type === 'log') {
+          let cls = '';
+          if (text.startsWith('[download]')) cls = 'download';
+          else if (text.startsWith('[Merger]') || text.startsWith('[ffmpeg]')) cls = 'merger';
+          else if (text.startsWith('[youtube]') || text.startsWith('[info]')) cls = 'info';
+          else if (text.startsWith('ERROR') || text.startsWith('error')) cls = 'error';
+          else if (text.startsWith('WARNING')) cls = 'warning';
+          log(text, cls);
+
+          // Parse progress
+          const pctMatch = text.match(/(\d+\.?\d*)%/);
+          if (pctMatch) {
+            const pct = parseFloat(pctMatch[1]);
+            const speedMatch = text.match(/at\s+([^\s]+)/);
+            setProgress(Math.min(pct, 99), speedMatch ? `${speedMatch[1]} এ ডাউনলোড হচ্ছে...` : 'ডাউনলোড হচ্ছে...');
+          }
+
+          // Extract filename
+          const destMatch = text.match(/Destination:\s+download\/(.+)/);
+          if (destMatch && !filename) filename = destMatch[1];
+
+          // Extract size
+          const sizeMatch = text.match(/of\s+([\d.]+\w+)\s+in/);
+          if (sizeMatch) filesize = sizeMatch[1];
+        }
+
+        if (type === 'done') {
+          setProgress(100, 'সম্পন্ন!');
+          log('');
+          log('✓ ডাউনলোড সফল হয়েছে!', 'success');
+          log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'dim');
+
+          // Show download result card
+          const result = document.getElementById('downloadResult');
+          document.getElementById('dlFileName').textContent = data.filename || filename || 'ফাইল তৈরি হয়েছে';
+          document.getElementById('dlFileMeta').textContent = filesize ? `সাইজ: ${filesize}` : '';
+          document.getElementById('dlLink').href = `${BACKEND_URL}/file/${encodeURIComponent(data.filename || filename)}`;
+          document.getElementById('dlLink').setAttribute('download', data.filename || filename || 'video');
+          result.classList.add('show');
+          setTimeout(() => document.getElementById('progressWrap').classList.remove('show'), 2000);
+        }
+
+        if (type === 'error') {
+          log('✗ এরর: ' + data.text, 'error');
+          setProgress(0, 'এরর হয়েছে');
+          setTimeout(() => document.getElementById('progressWrap').classList.remove('show'), 3000);
+        }
+      }
+    }
+
+  } catch (err) {
+    log('');
+    log('✗ সংযোগ ব্যর্থ: ' + err.message, 'error');
+    log('  Backend সার্ভার চালু আছে কিনা নিশ্চিত করুন।', 'dim');
+    log('  README.md দেখুন — backend সেটআপের নির্দেশনা আছে।', 'dim');
+    document.getElementById('progressWrap').classList.remove('show');
+  }
+
+  btn.disabled = false;
+  btnIcon.textContent = '⬇';
+  btnText.textContent = 'ডাউনলোড';
+}
+
+// Enter key support
+document.getElementById('urlInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startDownload();
+});
+
+// Paste auto-start (optional UX)
+document.getElementById('urlInput').addEventListener('paste', e => {
+  setTimeout(() => {
+    const v = document.getElementById('urlInput').value.trim();
+    if (v.startsWith('http')) log('🔗 URL পেস্ট হয়েছে — ডাউনলোড বাটনে ক্লিক করুন।', 'dim');
+  }, 100);
+});
+</script>
+</body>
+</html>
