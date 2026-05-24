@@ -84,7 +84,7 @@ nav {
   font-size:.72rem; color:var(--accent); font-weight:600; letter-spacing:.5px;
 }
 
-/* ── DEVELOPER PROFILE ── */
+/* ── DEV PROFILE ── */
 .dev-profile {
   display:flex; align-items:center; gap:10px;
   text-decoration:none;
@@ -106,11 +106,40 @@ nav {
   object-fit:cover;
 }
 .dev-info { display:flex; flex-direction:column; line-height:1.2; }
-.dev-name {
-  font-size:.78rem; font-weight:600; color:var(--text);
-  font-family:'Syne',sans-serif;
-}
+.dev-name { font-size:.78rem; font-weight:600; color:var(--text); font-family:'Syne',sans-serif; }
 .dev-role { font-size:.67rem; color:var(--muted); }
+
+/* ── COOKIE BANNER ── */
+.cookie-banner {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  background:rgba(255,185,48,.06); border:1px solid rgba(255,185,48,.25);
+  border-radius:14px; padding:12px 16px; margin-bottom:16px;
+  animation: fadeUp .5s ease both;
+}
+.cookie-banner.active {
+  background:rgba(61,220,151,.06); border-color:rgba(61,220,151,.3);
+}
+.cookie-banner-left { display:flex; align-items:center; gap:10px; }
+.cookie-icon { font-size:1.3rem; }
+.cookie-title { font-size:.82rem; font-weight:600; color:var(--text); margin-bottom:2px; }
+.cookie-sub  { font-size:.72rem; color:var(--muted); }
+.cookie-actions { display:flex; gap:8px; align-items:center; flex-shrink:0; }
+.btn-cookie {
+  border:none; border-radius:9px; padding:7px 14px;
+  font-size:.76rem; font-weight:600; cursor:pointer;
+  transition:all .2s; font-family:'Syne',sans-serif;
+}
+.btn-cookie-upload {
+  background:rgba(255,185,48,.15); color:var(--warning);
+  border:1px solid rgba(255,185,48,.3);
+}
+.btn-cookie-upload:hover { background:rgba(255,185,48,.28); }
+.btn-cookie-remove {
+  background:rgba(255,79,114,.1); color:var(--error);
+  border:1px solid rgba(255,79,114,.25); font-size:.72rem; padding:5px 10px;
+}
+.btn-cookie-remove:hover { background:rgba(255,79,114,.22); }
+#cookieFileInput { display:none; }
 
 /* ── HERO ── */
 .hero {
@@ -531,14 +560,32 @@ footer a:hover { text-decoration:underline; }
     <a class="dev-profile" href="https://github.com/shahinalam0774" target="_blank" rel="noopener">
       <img class="dev-avatar"
            src="https://github.com/shahinalam0774.png"
-           alt="Shahin Alam"
-           onerror="this.src='https://avatars.githubusercontent.com/u/shahinalam0774'"/>
+           alt="Shahin Alam"/>
       <div class="dev-info">
         <span class="dev-name">Shahin Alam</span>
         <span class="dev-role">Full Stack Developer 🇧🇩</span>
       </div>
     </a>
   </nav>
+
+  <!-- COOKIE BANNER -->
+  <div class="cookie-banner" id="cookieBanner">
+    <div class="cookie-banner-left">
+      <span class="cookie-icon">🍪</span>
+      <div>
+        <div class="cookie-title" id="cookieTitle">YouTube Cookies — Not Loaded</div>
+        <div class="cookie-sub" id="cookieSub">Upload cookies.txt to bypass bot-detection &amp; sign-in errors</div>
+      </div>
+    </div>
+    <div class="cookie-actions">
+      <input type="file" id="cookieFileInput" accept=".txt"/>
+      <button class="btn-cookie btn-cookie-upload" onclick="document.getElementById('cookieFileInput').click()">
+        ⬆ Upload cookies.txt
+      </button>
+      <button class="btn-cookie btn-cookie-remove" id="cookieRemoveBtn"
+              style="display:none" onclick="removeCookies()">✕ Remove</button>
+    </div>
+  </div>
 
   <!-- HERO -->
   <div class="hero">
@@ -1067,6 +1114,71 @@ document.getElementById('urlInput').addEventListener('paste', () => {
     if (v.startsWith('http')) log('🔗 URL pasted — click Download to start.', 'dim');
   }, 100);
 });
+
+// ── COOKIE MANAGEMENT ──
+async function checkCookieStatus() {
+  try {
+    const r = await fetch(`${BACKEND_URL}/cookie-status`);
+    const d = await r.json();
+    setCookieUI(d.active);
+  } catch {}
+}
+
+function setCookieUI(active) {
+  const banner = document.getElementById('cookieBanner');
+  const title  = document.getElementById('cookieTitle');
+  const sub    = document.getElementById('cookieSub');
+  const removeBtn = document.getElementById('cookieRemoveBtn');
+  if (active) {
+    banner.classList.add('active');
+    title.textContent = '✓ YouTube Cookies Loaded';
+    sub.textContent   = 'Bot-detection bypassed. Downloads should work normally.';
+    removeBtn.style.display = 'inline-block';
+  } else {
+    banner.classList.remove('active');
+    title.textContent = 'YouTube Cookies — Not Loaded';
+    sub.textContent   = 'Upload cookies.txt to bypass bot-detection & sign-in errors';
+    removeBtn.style.display = 'none';
+  }
+}
+
+document.getElementById('cookieFileInput').addEventListener('change', async function() {
+  const file = this.files[0];
+  if (!file) return;
+  const btn = document.querySelector('.btn-cookie-upload');
+  btn.textContent = '⏳ Uploading...';
+  btn.disabled = true;
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const r = await fetch(`${BACKEND_URL}/upload-cookies`, { method: 'POST', body: fd });
+    const d = await r.json();
+    if (d.success) {
+      log('✓ cookies.txt uploaded successfully!', 'ok');
+      setCookieUI(true);
+    } else {
+      log('✗ Cookie upload failed: ' + (d.error || 'Unknown error'), 'err');
+    }
+  } catch(e) {
+    log('✗ Upload error: ' + e.message, 'err');
+  }
+  btn.textContent = '⬆ Upload cookies.txt';
+  btn.disabled = false;
+  this.value = '';
+});
+
+async function removeCookies() {
+  try {
+    await fetch(`${BACKEND_URL}/delete-cookies`, { method: 'DELETE' });
+    setCookieUI(false);
+    log('🗑 cookies.txt removed.', 'warn');
+  } catch(e) {
+    log('✗ Remove failed: ' + e.message, 'err');
+  }
+}
+
+// Check on load
+checkCookieStatus();
 </script>
 </body>
 </html>
